@@ -25,3 +25,11 @@ services:
       - 443:443
       - 80:80
     restart: unless-stopped
+
+  my-journal:
+    build:
+      context: ./my-journal-config
+      dockerfile: dockerfile
+    ports:
+      - 3000:3000
+    restart: unless-stopped

@@ -1,0 +1,16 @@
+FROM node:16-alpine
+RUN apk --no-cache add git
+RUN git clone https://github.com/RemyPotus/my-journal.git
+COPY .env ./my-journal 
+WORKDIR /my-journal
+RUN ls
+RUN npm install
+RUN npm run build
+
+ENV HOST=0.0.0.0
+EXPOSE 3000
+
+CMD ["npm", "run", "start:prod"]
+
+#docker build -t my-journal .
+#docker run -p 3000:3000 my-journal
