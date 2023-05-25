@@ -42,14 +42,23 @@ services:
       - MYSQL_DATABASE=testmysql
     ports:
       - "3301:3306"
+
   mariadb:
     image: mariadb
     container_name: mariadb
     environment:
-      - MARIADB_ROOT_PASSWORD=secret
-      - MARIADB_DATABASE=testmariadb
+#      - MARIADB_ROOT_PASSWORD=secret
+#      - MARIADB_DATABASE=testmariadb
+      - TZ=Europe/London
+      - MYSQL_DATABASE=nextcloud
+      - MYSQL_USER=nextcloud
+      - MYSQL_PASSWORD=mysecretpassword
+      - MYSQL_ROOT_PASSWORD=mysecretpassword
     ports:
       - "3302:3306"
+    volumes:
+      - ./mariadb/data:/var/lib/mysql
+
   admin:
     image: phpmyadmin
     container_name: admin
@@ -57,3 +66,49 @@ services:
       - PMA_ARBITRARY=1
     ports:
       - "81:80"
+
+  ldap:
+    image: linuxserver/ldap-auth
+    container_name: ldap
+    environment:
+      - TZ=Europe/London
+      - LDAP_DOMAIN=example.com
+      - LDAP_ORGANISATION=Example
+      - LDAP_BASE_DN=admin
+      - LDAP_ADMIN_PASSWORD=mysecretpassword
+    ports:
+      - 8888:8888
+      - 9000:9000
+    restart: unless-stopped
+    volumes:
+      - ./ldap/data:/config
+
+  phpldapadmin:
+    image: osixia/phpldapadmin
+    container_name: phpldapadmin
+    environment:
+      - PHPLDAPADMIN_LDAP_HOSTS=ldap
+      - PHPLDAPADMIN_HTTPS=false
+    ports:
+      - 82:80
+    depends_on:
+      - ldap
+
+  nextcloud:
+    image: nextcloud
+    container_name: nextcloud
+    environment:
+      - TZ=Europe/London
+      - MYSQL_HOST=mariadb
+      - MYSQL_DATABASE=nextcloud
+      - MYSQL_USER=nextcloud
+      - MYSQL_PASSWORD=mysecretpassword
+      - LDAP_URI=ldap://ldap
+      - LDAP_BASE=dc=example,dc=com
+      - LDAP_BIND_USER=cn=admin,dc=example,dc=com
+      - LDAP_BIND_PASSWORD=mysecretpassword
+    ports:
+      - 83:80
+    depends_on:
+      - mariadb
+      - ldap
